@@ -6,6 +6,7 @@ import Dashboard from './app/Dashboard';
 import SubstitutionPage from './app/SubstitutionPage';
 import { DailyReportsPage, ViolationsPage, StudentsReportsPage } from './app/ReportsPage';
 import { ProfilePage } from './app/ProfilePage';
+import { SettingsPage } from './app/DataManagementModal';
 import { Lock, LayoutDashboard, ClipboardCheck, UserX, UserPlus, Users, Sparkles, UserCircle } from 'lucide-react';
 
 const LoginPage: React.FC = () => {
@@ -63,6 +64,7 @@ const MainApp: React.FC = () => {
       case 'daily': return <DailyReportsPage />;
       case 'violations': return <ViolationsPage />;
       case 'studentReports': return <StudentsReportsPage />;
+      case 'settings': return <SettingsPage />;
       default: return <Dashboard />;
     }
   };
