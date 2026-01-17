@@ -1,13 +1,27 @@
 
 export type Language = 'ar' | 'en';
 
+export interface CustomField {
+  id: string;
+  label: string;
+  value: string;
+}
+
 export interface SchoolProfile {
   schoolName: string;
   supervisorName: string;
   classes: string;
   qualityOfficer: string;
-  managerName: string;
+  managerName: string; // Kept for backward compatibility, can represent General Manager or Principal
   year: string;
+  // New Fields
+  ministry?: string;
+  district?: string;
+  branch?: string;
+  term?: string;
+  branchManager?: string;
+  generalManager?: string;
+  customFields?: CustomField[];
 }
 
 export interface SubstitutionEntry {
@@ -18,6 +32,8 @@ export interface SubstitutionEntry {
   class: string;
   date: string;
   paymentStatus: 'pending' | 'paid';
+  // Dynamic periods
+  [key: string]: any;
 }
 
 export interface TeacherFollowUp {

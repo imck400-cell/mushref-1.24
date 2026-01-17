@@ -5,6 +5,7 @@ import Layout from './components/Layout';
 import Dashboard from './app/Dashboard';
 import SubstitutionPage from './app/SubstitutionPage';
 import { DailyReportsPage, ViolationsPage, StudentsReportsPage } from './app/ReportsPage';
+import { ProfilePage } from './app/ProfilePage';
 import { Lock, LayoutDashboard, ClipboardCheck, UserX, UserPlus, Users, Sparkles, UserCircle } from 'lucide-react';
 
 const LoginPage: React.FC = () => {
@@ -50,14 +51,14 @@ const LoginPage: React.FC = () => {
 };
 
 const MainApp: React.FC = () => {
-  const { isAuthenticated, lang } = useGlobal();
-  const [view, setView] = useState('dashboard');
+  const { isAuthenticated, lang, currentView, setCurrentView } = useGlobal();
 
   if (!isAuthenticated) return <LoginPage />;
 
   const renderView = () => {
-    switch(view) {
+    switch(currentView) {
       case 'dashboard': return <Dashboard />;
+      case 'profile': return <ProfilePage />;
       case 'substitute': return <SubstitutionPage />;
       case 'daily': return <DailyReportsPage />;
       case 'violations': return <ViolationsPage />;
@@ -84,9 +85,9 @@ const MainApp: React.FC = () => {
         {navItems.map((item) => (
           <button 
             key={item.id}
-            onClick={() => setView(item.id)}
+            onClick={() => setCurrentView(item.id)}
             className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-black transition-all ${
-              view === item.id 
+              currentView === item.id 
               ? 'bg-blue-600 text-white shadow-xl shadow-blue-100 scale-105' 
               : 'bg-white text-slate-500 hover:bg-slate-50 border border-slate-100'
             }`}

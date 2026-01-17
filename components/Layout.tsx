@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { lang, setLang, logout, data } = useGlobal();
+  const { lang, setLang, logout, data, currentView, setCurrentView } = useGlobal();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const t = {
@@ -76,7 +76,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             {menuItems.map((item, idx) => (
               <button 
                 key={idx}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-all text-sm font-medium"
+                onClick={() => setCurrentView(item.path)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-sm font-medium ${currentView === item.path ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-blue-50 hover:text-blue-600'}`}
               >
                 {item.icon}
                 <span>{item.label}</span>

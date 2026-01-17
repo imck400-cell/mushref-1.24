@@ -10,6 +10,8 @@ interface GlobalContextType {
   isAuthenticated: boolean;
   login: (pass: string) => boolean;
   logout: () => void;
+  currentView: string;
+  setCurrentView: (view: string) => void;
 }
 
 const defaultMaxGrades = {
@@ -30,7 +32,21 @@ const defaultMaxGrades = {
 };
 
 const defaultData: AppData = {
-  profile: { schoolName: '', supervisorName: '', classes: '', qualityOfficer: '', managerName: '', year: '2024-2025' },
+  profile: { 
+    schoolName: '', 
+    supervisorName: '', 
+    classes: '', 
+    qualityOfficer: '', 
+    managerName: '', 
+    year: '2024-2025',
+    ministry: '',
+    district: '',
+    branch: '',
+    term: '',
+    branchManager: '',
+    generalManager: '',
+    customFields: []
+  },
   substitutions: [],
   dailyReports: [],
   violations: [],
@@ -46,6 +62,7 @@ export const GlobalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [lang, setLang] = useState<Language>('ar');
   const [data, setData] = useState<AppData>(defaultData);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentView, setCurrentView] = useState('dashboard');
 
   useEffect(() => {
     const savedData = localStorage.getItem('rafiquk_data');
@@ -87,7 +104,7 @@ export const GlobalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   return (
-    <GlobalContext.Provider value={{ lang, setLang: handleSetLang, data, updateData, isAuthenticated, login, logout }}>
+    <GlobalContext.Provider value={{ lang, setLang: handleSetLang, data, updateData, isAuthenticated, login, logout, currentView, setCurrentView }}>
       {children}
     </GlobalContext.Provider>
   );
