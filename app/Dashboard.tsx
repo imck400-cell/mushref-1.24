@@ -10,7 +10,7 @@ const DashboardWidget: React.FC<{ id: string, initialStat: any, data: any, lang:
   // Persistent State
   const [config, setConfig] = useState(() => {
     const saved = localStorage.getItem(`widget_config_${id}`);
-    return saved ? JSON.parse(saved) : { type: '', criteria: [], interval: 5000 };
+    return saved ? JSON.parse(saved) : { type: '', criteria: [], interval: 5000, timeRange: 'all' };
   });
 
   const [mode, setMode] = useState<'default' | 'custom'>(() => {
@@ -71,8 +71,32 @@ const DashboardWidget: React.FC<{ id: string, initialStat: any, data: any, lang:
     
     let allLines: string[] = [];
     
+    // Time Filter Helper
+    const checkDate = (dateStr: string) => {
+        if (!dateStr) return false;
+        if (config.timeRange === 'all' || !config.timeRange) return true;
+        const targetDate = new Date(dateStr);
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        targetDate.setHours(0,0,0,0);
+        
+        const diffTime = Math.abs(today.getTime() - targetDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+
+        if (config.timeRange === 'daily') {
+            return today.getTime() === targetDate.getTime();
+        }
+        if (config.timeRange === 'weekly') {
+            return diffDays <= 7;
+        }
+        if (config.timeRange === 'monthly') {
+            return diffDays <= 30;
+        }
+        return true;
+    };
+
     if (config.type === 'students') {
-       const students = data.studentReports || [];
+       const students = (data.studentReports || []).filter((s:any) => checkDate(s.createdAt));
        if (config.criteria.includes('excellent')) {
           students.filter((s:any) => s.isExcellent).forEach((s:any) => allLines.push(`🌟 ${lang==='ar'?'المتميزين':'Excellent'}: ${s.name}`));
        }
@@ -95,15 +119,21 @@ const DashboardWidget: React.FC<{ id: string, initialStat: any, data: any, lang:
           students.filter((s:any) => ['ضعيفة', 'متذمر', 'عدواني'].some((v:string) => s.guardianCooperation.includes(v))).forEach((s:any) => allLines.push(`🤝 ${lang==='ar'?'ولي أمر':'Guardian'}: ${s.name}`));
        }
     } else if (config.type === 'teachers') {
-       const report = data.dailyReports[data.dailyReports.length - 1];
-       const teachers = report ? report.teachersData : [];
+       // Filter reports by date first, then flatten teachers
+       const filteredReports = data.dailyReports.filter((r:any) => checkDate(r.dateStr));
+       const teachers: any[] = [];
+       filteredReports.forEach((r:any) => {
+           r.teachersData.forEach((t:any) => {
+               teachers.push({ ...t, _reportDate: r.dateStr });
+           });
+       });
        
        if (config.criteria.includes('top')) {
           [...teachers].sort((a:any,b:any) => {
              const scoreA = Object.values(a).filter(v => typeof v === 'number').reduce((x:any,y:any)=>x+y,0) as number;
              const scoreB = Object.values(b).filter(v => typeof v === 'number').reduce((x:any,y:any)=>x+y,0) as number;
              return scoreB - scoreA;
-          }).slice(0, 5).forEach((t:any) => allLines.push(`🥇 ${lang==='ar'?'الأول':'Top'}: ${t.teacherName}`));
+          }).slice(0, 5).forEach((t:any) => allLines.push(`🥇 ${lang==='ar'?'الأول':'Top'}: ${t.teacherName} (${t._reportDate})`));
        }
        if (config.criteria.includes('low')) {
            [...teachers].sort((a:any,b:any) => {
@@ -122,7 +152,7 @@ const DashboardWidget: React.FC<{ id: string, initialStat: any, data: any, lang:
           teachers.filter((t:any) => t.preparation < 8).forEach((t:any) => allLines.push(`📝 ${lang==='ar'?'تحضير':'Prep'}: ${t.teacherName}`));
        }
     } else if (config.type === 'violations') {
-       const vs = data.violations || [];
+       const vs = (data.violations || []).filter((v:any) => checkDate(v.date));
        if (config.criteria.includes('recent')) {
           vs.slice(-5).forEach((v:any) => allLines.push(`🕒 ${lang==='ar'?'جديد':'Recent'}: ${v.studentName} (${v.type})`));
        }
@@ -136,7 +166,7 @@ const DashboardWidget: React.FC<{ id: string, initialStat: any, data: any, lang:
           vs.filter((v:any) => v.type === 'فصل').forEach((v:any) => allLines.push(`⛔ ${lang==='ar'?'فصل':'Suspension'}: ${v.studentName}`));
        }
     } else if (config.type === 'substitutions') {
-       const subs = data.substitutions || [];
+       const subs = (data.substitutions || []).filter((s:any) => checkDate(s.date));
        if (config.criteria.includes('recent')) {
           subs.slice(-5).forEach((s:any) => allLines.push(`🔄 ${lang==='ar'?'تغطية':'Sub'}: ${s.absentTeacher} (${s.date})`));
        }
@@ -230,6 +260,11 @@ const DashboardWidget: React.FC<{ id: string, initialStat: any, data: any, lang:
             <div className="absolute top-0 right-0 left-0 text-center">
                <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-black bg-${initialStat.color}-100 text-${initialStat.color}-700 shadow-sm border border-${initialStat.color}-200`}>
                  {currentLabel}
+                 {config.timeRange && config.timeRange !== 'all' && (
+                    <span className="opacity-70 px-1 border-r border-${initialStat.color}-300 mx-1">
+                        {config.timeRange === 'daily' ? 'يومي' : config.timeRange === 'weekly' ? 'أسبوعي' : 'شهري'}
+                    </span>
+                 )}
                </span>
             </div>
 
@@ -310,6 +345,26 @@ const DashboardWidget: React.FC<{ id: string, initialStat: any, data: any, lang:
                  )}
 
                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 block mb-1">الفترة الزمنية</label>
+                    <div className="flex gap-2">
+                        {[
+                            {id: 'all', label: 'الكل'}, 
+                            {id: 'daily', label: 'يومي'}, 
+                            {id: 'weekly', label: 'أسبوعي'}, 
+                            {id: 'monthly', label: 'شهري'}
+                        ].map((opt) => (
+                            <button
+                                key={opt.id}
+                                onClick={() => setTempConfig({...tempConfig, timeRange: opt.id})}
+                                className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${(tempConfig.timeRange || 'all') === opt.id ? `bg-${initialStat.color}-600 text-white border-${initialStat.color}-600` : 'bg-slate-50 text-slate-500 border-slate-200'}`}
+                            >
+                                {opt.label}
+                            </button>
+                        ))}
+                    </div>
+                 </div>
+
+                 <div>
                     <label className="text-[10px] font-bold text-slate-500 block mb-1">سرعة العرض</label>
                     <div className="flex gap-2">
                       {[3000, 5000, 10000].map(time => (
@@ -351,8 +406,8 @@ const Dashboard: React.FC = () => {
       icon: <CheckCircle2 /> 
     },
     { 
-      label: lang === 'ar' ? 'حالات الغياب اليوم' : 'Absences Today', 
-      value: 0, 
+      label: lang === 'ar' ? 'إجمالي المخالفات' : 'Violations', 
+      value: data.violations.length, 
       color: 'red', 
       icon: <AlertCircle /> 
     },
@@ -362,6 +417,31 @@ const Dashboard: React.FC = () => {
       color: 'amber', 
       icon: <TrendingUp /> 
     },
+    // New 4 widgets
+    {
+      label: lang === 'ar' ? 'عدد الطلاب' : 'Total Students',
+      value: data.studentReports?.length || 0,
+      color: 'cyan',
+      icon: <GraduationCap />
+    },
+    {
+      label: lang === 'ar' ? 'الطلاب المتميزين' : 'Excellent Students',
+      value: data.studentReports?.filter(s => s.isExcellent).length || 0,
+      color: 'yellow',
+      icon: <Star />
+    },
+    {
+      label: lang === 'ar' ? 'القائمة السوداء' : 'Blacklist',
+      value: data.studentReports?.filter(s => s.isBlacklisted).length || 0,
+      color: 'slate',
+      icon: <ShieldAlert />
+    },
+    {
+      label: lang === 'ar' ? 'متابعة المعلمين' : 'Teachers Follow-up',
+      value: data.teacherFollowUps.length || 0,
+      color: 'purple',
+      icon: <BookOpen />
+    }
   ];
 
   return (
