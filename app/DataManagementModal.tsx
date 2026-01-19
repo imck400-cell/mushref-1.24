@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useGlobal } from '../context/GlobalState';
 import { 
@@ -185,7 +184,7 @@ export const DataManagementModal: React.FC = () => {
   return (
     <div className="bg-white rounded-3xl shadow-sm border overflow-hidden min-h-[600px] flex flex-col font-arabic">
       {/* Header */}
-      <div className="bg-slate-900 text-white p-6 flex justify-between items-center">
+      <div className="bg-slate-900 text-white p-6 flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
            <h2 className="text-2xl font-black flex items-center gap-3">
              <Database className="text-blue-400" />
@@ -195,7 +194,7 @@ export const DataManagementModal: React.FC = () => {
              {lang === 'ar' ? 'نظام النسخ الاحتياطي التلقائي والنقل الآمن للبيانات' : 'Automatic backup system and secure data transfer'}
            </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap justify-center md:justify-end">
             <button onClick={() => setActiveTab('export')} className={`px-4 py-2 rounded-xl font-bold transition-all ${activeTab === 'export' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>{lang === 'ar' ? 'تصدير' : 'Export'}</button>
             <button onClick={() => setActiveTab('import')} className={`px-4 py-2 rounded-xl font-bold transition-all ${activeTab === 'import' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>{lang === 'ar' ? 'استيراد' : 'Import'}</button>
             <button onClick={() => setActiveTab('archive')} className={`px-4 py-2 rounded-xl font-bold transition-all ${activeTab === 'archive' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>{lang === 'ar' ? 'الأرشيف' : 'Archives'}</button>

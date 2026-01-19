@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { useGlobal } from '../context/GlobalState';
 import { 
   Menu, X, Home, Users, ClipboardList, BookOpen, 
-  Settings, LogOut, MessageCircle, FileText, UserPlus, AlertTriangle
+  Settings, LogOut, MessageCircle, FileText, UserPlus, ShieldAlert
 } from 'lucide-react';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -18,6 +17,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       substitute: 'جدول التغطية',
       students: 'شؤون الطلاب',
       teachers: 'شؤون المعلمين',
+      specialReports: 'التقارير الخاصة',
       settings: 'الإعدادات',
       logout: 'تسجيل الخروج',
       footer: 'إعداد المستشار الإداري والتربوي إبراهيم دخان'
@@ -29,6 +29,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       substitute: 'Coverage Schedule',
       students: 'Student Management',
       teachers: 'Teacher Management',
+      specialReports: 'Special Reports',
       settings: 'Settings',
       logout: 'Logout',
       footer: 'Prepared by Admin Consultant Ibrahim Dukhan'
@@ -42,6 +43,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { icon: <UserPlus className="w-5 h-5" />, label: t.substitute, path: 'substitute' },
     { icon: <Users className="w-5 h-5" />, label: t.students, path: 'students' },
     { icon: <BookOpen className="w-5 h-5" />, label: t.teachers, path: 'teachers' },
+    { icon: <ShieldAlert className="w-5 h-5" />, label: t.specialReports, path: 'specialReports' },
     { icon: <Settings className="w-5 h-5" />, label: t.settings, path: 'settings' },
   ];
 
@@ -71,12 +73,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
       <div className="flex flex-1">
         {/* Sidebar */}
-        <aside className={`${isSidebarOpen ? 'w-64' : 'w-0 overflow-hidden'} transition-all bg-white border-e h-[calc(100vh-4rem)] sticky top-16`}>
+        <aside className={`${isSidebarOpen ? 'w-64' : 'w-0 overflow-hidden'} transition-all bg-white border-e h-[calc(100vh-4rem)] sticky top-16 z-40`}>
           <nav className="p-4 space-y-2">
             {menuItems.map((item, idx) => (
               <button 
                 key={idx}
-                onClick={() => setCurrentView(item.path)}
+                onClick={() => { setCurrentView(item.path); setIsSidebarOpen(false); }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-sm font-medium ${currentView === item.path ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-blue-50 hover:text-blue-600'}`}
               >
                 {item.icon}

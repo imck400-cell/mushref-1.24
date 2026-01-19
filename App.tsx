@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { GlobalProvider, useGlobal } from './context/GlobalState';
 import Layout from './components/Layout';
 import Dashboard from './app/Dashboard';
 import SubstitutionPage from './app/SubstitutionPage';
-import { DailyReportsPage, ViolationsPage, StudentsReportsPage } from './app/ReportsPage';
+import { DailyReportsPage, ViolationsPage, StudentsReportsPage, SpecialReportsPage } from './app/ReportsPage';
 import { ProfilePage } from './app/ProfilePage';
 import { SettingsPage } from './app/DataManagementModal';
 import { Lock, LayoutDashboard, ClipboardCheck, UserX, UserPlus, Users, Sparkles, UserCircle } from 'lucide-react';
@@ -63,7 +62,9 @@ const MainApp: React.FC = () => {
       case 'substitute': return <SubstitutionPage />;
       case 'daily': return <DailyReportsPage />;
       case 'violations': return <ViolationsPage />;
-      case 'studentReports': return <StudentsReportsPage />;
+      case 'students': return <StudentsReportsPage />; // Corrected from 'studentReports' to match Layout path
+      case 'teachers': return <DailyReportsPage />; // Teachers redirects to DailyReports for now or separates if needed
+      case 'specialReports': return <SpecialReportsPage />;
       case 'settings': return <SettingsPage />;
       default: return <Dashboard />;
     }
@@ -74,7 +75,7 @@ const MainApp: React.FC = () => {
     { id: 'daily', label: lang === 'ar' ? 'متابعة المعلمين' : 'Teachers Log', icon: <ClipboardCheck className="w-4 h-4" /> },
     { id: 'substitute', label: lang === 'ar' ? 'جدول التغطية' : 'Coverage Log', icon: <UserPlus className="w-4 h-4" /> },
     { id: 'violations', label: lang === 'ar' ? 'التعهدات' : 'Violations', icon: <UserX className="w-4 h-4" /> },
-    { id: 'studentReports', label: lang === 'ar' ? 'تقارير الطلاب' : 'Student Reports', icon: <UserCircle className="w-4 h-4" /> },
+    { id: 'students', label: lang === 'ar' ? 'تقارير الطلاب' : 'Student Reports', icon: <UserCircle className="w-4 h-4" /> },
   ];
 
   return (
