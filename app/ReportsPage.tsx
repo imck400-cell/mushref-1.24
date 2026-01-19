@@ -109,7 +109,9 @@ export const DailyReportsPage: React.FC = () => {
     return 'bg-[#DDEBF7]';
   };
 
+  // ... (Keeping all existing Teacher functions identical) ...
   const handleTeacherFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // ... same code ...
     const file = e.target.files?.[0];
     if (!file || !activeReportId) return;
     const reader = new FileReader();
@@ -298,7 +300,6 @@ export const DailyReportsPage: React.FC = () => {
 
   return (
     <div className="space-y-4 font-arabic">
-      {/* (Keep existing JSX for DailyReportsPage) */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-2xl shadow-sm border">
         <div className="flex flex-wrap items-center gap-2">
           <button onClick={handleCreateReport} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl font-bold hover:bg-blue-700 transition-all text-xs sm:text-sm"><FilePlus size={16}/> إضافة جدول جديد</button>
@@ -612,6 +613,7 @@ export const DailyReportsPage: React.FC = () => {
 };
 
 export const ViolationsPage: React.FC = () => {
+    // ... Keeping ViolationsPage identical
     const { lang, data, updateData } = useGlobal();
     const [textModal, setTextModal] = useState<{ id: string, field: 'reason' | 'action', value: string } | null>(null);
     const violations = data.violations || [];
@@ -954,11 +956,75 @@ export const StudentsReportsPage: React.FC = () => {
     return selectedColumns.includes(key);
   };
 
-  // Export functions (kept same)
-  const generateReportText = () => { /* ... same ... */ return ''; }; 
-  const exportToExcel = () => { /* ... same ... */ }; 
-  const exportToTxt = () => { /* ... same ... */ }; 
-  const sendWhatsApp = () => { /* ... same ... */ };
+  const getStatusIcon = (val: string) => {
+      if (typeof val !== 'string') return '';
+      if (val.includes('ضعيف') || val.includes('مريض') || val.includes('سيء') || val.includes('متذمر')) return '🔴';
+      if (val.includes('ممتاز') || val.includes('جيد جدا')) return '🟢';
+      if (val.includes('متوسط') || val.includes('مقبول')) return '⚠️';
+      return '🔹';
+  };
+
+  const generateReportText = () => {
+    let text = `*📋 تقرير شؤون الطلاب التفصيلي*\n`;
+    text += `*📅 التاريخ:* ${new Date(selectedDate).toLocaleDateString('ar-EG')}\n`;
+    text += `----------------------------------\n\n`;
+
+    filteredData.forEach((s, i) => {
+      text += `*👤 الطالب (${i + 1}): ${s.name}*\n`;
+      text += `📍 *البيانات الأساسية:*\n`;
+      text += `   - الصف: ${s.grade} | الشعبة: ${s.section} | النوع: ${s.gender}\n`;
+      text += `   - العنوان: ${s.address || '---'} | العمل: ${getStatusIcon(s.workOutside)} ${s.workOutside}\n`;
+      
+      text += `🏥 *الصحة:* ${getStatusIcon(s.healthStatus)} ${s.healthStatus} ${s.healthDetails ? `(${s.healthDetails})` : ''}\n`;
+      
+      text += `👨‍👦 *ولي الأمر:* ${s.guardianName || '---'} | 📞 ${s.guardianPhones.join(', ')}\n`;
+      text += `   - التعليم: ${s.guardianEducation} | المتابعة: ${getStatusIcon(s.guardianFollowUp)} ${s.guardianFollowUp} | التعاون: ${getStatusIcon(s.guardianCooperation)} ${s.guardianCooperation}\n`;
+      
+      text += `📚 *المستوى العلمي:*\n`;
+      text += `   - القراءة: ${getStatusIcon(s.academicReading)} ${s.academicReading}\n`;
+      text += `   - الكتابة: ${getStatusIcon(s.academicWriting)} ${s.academicWriting}\n`;
+      text += `   - المشاركة: ${getStatusIcon(s.academicParticipation)} ${s.academicParticipation}\n`;
+      
+      text += `🧠 *السلوك:* ${getStatusIcon(s.behaviorLevel)} ${s.behaviorLevel}\n`;
+      
+      if (s.mainNotes.length > 0 || s.notes) {
+          text += `📝 *الملاحظات:* ${s.mainNotes.join('، ')} ${s.notes ? `| ${s.notes}` : ''}\n`;
+      }
+      
+      text += `----------------------------------\n`;
+    });
+    
+    text += `\n*إعداد: رفيق المشرف الإداري*`;
+    return text;
+  };
+
+  const exportToExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(filteredData.map(s => ({
+      'اسم الطالب': s.name, 'الصف': s.grade, 'الشعبة': s.section, 'النوع': s.gender, 'العنوان': s.address,
+      'العمل': s.workOutside, 'الحالة الصحية': s.healthStatus, 'تفاصيل الصحة': s.healthDetails, 'ولي الأمر': s.guardianName,
+      'الهواتف': s.guardianPhones.join(', '), 'القراءة': s.academicReading, 'الكتابة': s.academicWriting, 'المشاركة': s.academicParticipation,
+      'السلوك': s.behaviorLevel, 'الملاحظات': s.mainNotes.join(', '), 'تعليم الولي': s.guardianEducation, 'متابعة الولي': s.guardianFollowUp,
+      'تعاون الولي': s.guardianCooperation, 'ملاحظات أخرى': s.notes
+    })));
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
+    XLSX.writeFile(workbook, `Students_Report_Full_${Date.now()}.xlsx`);
+  };
+
+  const exportToTxt = () => {
+    const text = generateReportText().replace(/\*/g, '');
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `Students_Report_Full_${Date.now()}.txt`;
+    link.click();
+  };
+
+  const sendWhatsApp = () => {
+    const text = generateReportText();
+    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  };
 
   const handleListApply = () => {
     if (tempListSelected.length > 0) {
@@ -984,6 +1050,18 @@ export const StudentsReportsPage: React.FC = () => {
           <button onClick={bulkAutoFill} className="flex items-center gap-2 bg-purple-50 text-purple-700 px-4 py-2.5 rounded-xl font-bold text-sm border border-purple-200 hover:bg-purple-100 transition-all">
             <Sparkles className="w-4 h-4" /> {lang === 'ar' ? 'التعبئة التلقائية' : 'Auto Fill'}
           </button>
+          
+          <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200">
+            <button onClick={exportToTxt} className="p-2.5 hover:bg-white text-slate-600 rounded-lg transition-all" title="TXT Export (Full)">
+              <FileText className="w-4 h-4" />
+            </button>
+            <button onClick={exportToExcel} className="p-2.5 hover:bg-white text-green-600 rounded-lg transition-all" title="Excel Export (Full)">
+              <FileSpreadsheet className="w-4 h-4" />
+            </button>
+            <button onClick={sendWhatsApp} className="p-2.5 hover:bg-white text-green-500 rounded-lg transition-all" title="WhatsApp Report (Full)">
+              <Share2 className="w-4 h-4" />
+            </button>
+          </div>
         </div>
         
         <div className="flex items-center gap-2 flex-wrap">
@@ -1032,13 +1110,13 @@ export const StudentsReportsPage: React.FC = () => {
           <table className="w-full text-center border-collapse min-w-[1200px]">
              <thead className="sticky top-0 z-20 shadow-sm text-xs">
                 <tr className="border-b border-slate-300">
-                  <th colSpan={4} className="p-2 border-e border-slate-300 bg-[#FFD966] font-black">بيانات الطالب</th>
-                  {isColVisible('address') && <th colSpan={6} className="p-2 border-e border-slate-300 bg-slate-50 font-black">البيانات الشخصية</th>}
-                  {isColVisible('academic') && <th colSpan={3} className="p-2 border-e border-slate-300 bg-[#FFF2CC] font-black">المستوى العلمي</th>}
-                  {isColVisible('behavior') && <th rowSpan={2} className="p-2 border-e border-slate-300 bg-white font-black w-32">السلوك</th>}
-                  {isColVisible('notes') && <th colSpan={2} className="p-2 border-e border-slate-300 bg-white font-black">الملاحظات</th>}
-                  {isColVisible('followup') && <th colSpan={3} className="p-2 border-e border-slate-300 bg-[#DDEBF7] font-black">متابعة ولي الأمر</th>}
-                  <th rowSpan={2} className="p-2 bg-white font-black min-w-[120px]">
+                  <th colSpan={4} className="p-3 border-e border-slate-300 bg-[#FFD966] font-black whitespace-nowrap">بيانات الطالب</th>
+                  {isColVisible('address') && <th colSpan={6} className="p-3 border-e border-slate-300 bg-slate-50 font-black whitespace-nowrap">البيانات الشخصية</th>}
+                  {isColVisible('academic') && <th colSpan={3} className="p-3 border-e border-slate-300 bg-[#FFF2CC] font-black whitespace-nowrap">المستوى العلمي</th>}
+                  {isColVisible('behavior') && <th rowSpan={2} className="p-3 border-e border-slate-300 bg-white font-black whitespace-nowrap">السلوك</th>}
+                  {isColVisible('notes') && <th colSpan={2} className="p-3 border-e border-slate-300 bg-white font-black whitespace-nowrap">الملاحظات</th>}
+                  {isColVisible('followup') && <th colSpan={3} className="p-3 border-e border-slate-300 bg-[#DDEBF7] font-black whitespace-nowrap">متابعة ولي الأمر</th>}
+                  <th rowSpan={2} className="p-3 bg-white font-black min-w-[100px] whitespace-nowrap">
                       <div className="flex flex-col items-center gap-1">
                         <span>حذف</span>
                         <div className="flex items-center gap-2">
@@ -1049,38 +1127,38 @@ export const StudentsReportsPage: React.FC = () => {
                   </th>
                 </tr>
                 <tr className="border-b border-slate-300">
-                  <th className="p-2 border-e border-slate-300 bg-[#FFD966] w-64 sticky right-0 z-30">اسم الطالب</th>
-                  {isColVisible('grade') && <th className="p-2 border-e border-slate-300 bg-[#FFD966] w-24">الصف</th>}
-                  {isColVisible('section') && <th className="p-2 border-e border-slate-300 bg-[#FFD966] w-20">الشعبة</th>}
-                  {isColVisible('gender') && <th className="p-2 border-e border-slate-300 bg-[#FFD966] w-20">النوع</th>}
+                  <th className="p-3 border-e border-slate-300 bg-[#FFD966] min-w-[200px] whitespace-nowrap sticky right-0 z-30">اسم الطالب</th>
+                  {isColVisible('grade') && <th className="p-3 border-e border-slate-300 bg-[#FFD966] whitespace-nowrap">الصف</th>}
+                  {isColVisible('section') && <th className="p-3 border-e border-slate-300 bg-[#FFD966] whitespace-nowrap">الشعبة</th>}
+                  {isColVisible('gender') && <th className="p-3 border-e border-slate-300 bg-[#FFD966] whitespace-nowrap">النوع</th>}
                   {isColVisible('address') && (
                     <>
-                        <th className="p-2 border-e border-slate-300 bg-slate-50 w-32">العنوان</th>
-                        <th className="p-2 border-e border-slate-300 bg-slate-50 w-24">العمل</th>
-                        <th className="p-2 border-e border-slate-300 bg-slate-50 w-24">الصحة</th>
-                        <th className="p-2 border-e border-slate-300 bg-slate-50 w-32">تفاصيل الصحة</th>
-                        <th className="p-2 border-e border-slate-300 bg-slate-50 w-40">ولي الأمر</th>
-                        <th className="p-2 border-e border-slate-300 bg-slate-50 w-32">الهاتف</th>
+                        <th className="p-3 border-e border-slate-300 bg-slate-50 whitespace-nowrap">العنوان</th>
+                        <th className="p-3 border-e border-slate-300 bg-slate-50 whitespace-nowrap">العمل</th>
+                        <th className="p-3 border-e border-slate-300 bg-slate-50 whitespace-nowrap">الصحة</th>
+                        <th className="p-3 border-e border-slate-300 bg-slate-50 min-w-[150px] whitespace-nowrap">تفاصيل الصحة</th>
+                        <th className="p-3 border-e border-slate-300 bg-slate-50 min-w-[150px] whitespace-nowrap">ولي الأمر</th>
+                        <th className="p-3 border-e border-slate-300 bg-slate-50 whitespace-nowrap">الهاتف</th>
                     </>
                   )}
                   {isColVisible('academic') && (
                     <>
-                        <th className="p-2 border-e border-slate-300 bg-[#FFF2CC] w-24">القراءة</th>
-                        <th className="p-2 border-e border-slate-300 bg-[#FFF2CC] w-24">الكتابة</th>
-                        <th className="p-2 border-e border-slate-300 bg-[#FFF2CC] w-24">المشاركة</th>
+                        <th className="p-3 border-e border-slate-300 bg-[#FFF2CC] whitespace-nowrap">القراءة</th>
+                        <th className="p-3 border-e border-slate-300 bg-[#FFF2CC] whitespace-nowrap">الكتابة</th>
+                        <th className="p-3 border-e border-slate-300 bg-[#FFF2CC] whitespace-nowrap">المشاركة</th>
                     </>
                   )}
                   {isColVisible('notes') && (
                     <>
-                        <th className="p-2 border-e border-slate-300 bg-white w-48">الأساسية</th>
-                        <th className="p-2 border-e border-slate-300 bg-white w-48">أخرى</th>
+                        <th className="p-3 border-e border-slate-300 bg-white min-w-[180px] whitespace-nowrap">الأساسية</th>
+                        <th className="p-3 border-e border-slate-300 bg-white min-w-[180px] whitespace-nowrap">أخرى</th>
                     </>
                   )}
                   {isColVisible('followup') && (
                     <>
-                        <th className="p-2 border-e border-slate-300 bg-[#DDEBF7] w-24">التعليم</th>
-                        <th className="p-2 border-e border-slate-300 bg-[#DDEBF7] w-24">المتابعة</th>
-                        <th className="p-2 border-e border-slate-300 bg-[#DDEBF7] w-24">التعاون</th>
+                        <th className="p-3 border-e border-slate-300 bg-[#DDEBF7] whitespace-nowrap">التعليم</th>
+                        <th className="p-3 border-e border-slate-300 bg-[#DDEBF7] whitespace-nowrap">المتابعة</th>
+                        <th className="p-3 border-e border-slate-300 bg-[#DDEBF7] whitespace-nowrap">التعاون</th>
                     </>
                   )}
                 </tr>
@@ -1088,54 +1166,54 @@ export const StudentsReportsPage: React.FC = () => {
              <tbody className="divide-y">
                 {filteredData.map((s, idx) => (
                   <tr key={s.id} className="hover:bg-slate-50">
-                     <td className="p-2 border-e sticky right-0 bg-white z-10 flex items-center gap-1 group-hover:bg-slate-50">
+                     <td className="p-2 border-e sticky right-0 bg-white z-10 flex items-center gap-1 group-hover:bg-slate-50 whitespace-nowrap">
                         <div className="flex flex-col gap-0.5">
                            <button onClick={() => toggleStar(s.id, 'isExcellent')}><Star size={12} className={s.isExcellent ? "fill-yellow-400 text-yellow-400" : "text-slate-300"}/></button>
                            <button onClick={() => toggleStar(s.id, 'isBlacklisted')}><AlertCircle size={12} className={s.isBlacklisted ? "text-red-600" : "text-slate-300"}/></button>
                         </div>
                         <input className="w-full text-xs font-bold bg-transparent outline-none" value={s.name} onChange={(e) => updateStudent(s.id, 'name', e.target.value)} placeholder="الاسم..." />
                      </td>
-                     {isColVisible('grade') && <td className="p-1 border-e"><select className="w-full bg-transparent text-[10px] outline-none" value={s.grade} onChange={(e) => updateStudent(s.id, 'grade', e.target.value)}>{options.grades.map(o => <option key={o} value={o}>{o}</option>)}</select></td>}
-                     {isColVisible('section') && <td className="p-1 border-e"><select className="w-full bg-transparent text-[10px] outline-none" value={s.section} onChange={(e) => updateStudent(s.id, 'section', e.target.value)}>{options.sections.map(o => <option key={o} value={o}>{o}</option>)}</select></td>}
-                     {isColVisible('gender') && <td className="p-1 border-e"><select className="w-full bg-transparent text-[10px] outline-none" value={s.gender} onChange={(e) => updateStudent(s.id, 'gender', e.target.value)}>{options.gender.map(o => <option key={o} value={o}>{o}</option>)}</select></td>}
+                     {isColVisible('grade') && <td className="p-1 border-e whitespace-nowrap"><select className="w-full bg-transparent text-[10px] outline-none" value={s.grade} onChange={(e) => updateStudent(s.id, 'grade', e.target.value)}>{options.grades.map(o => <option key={o} value={o}>{o}</option>)}</select></td>}
+                     {isColVisible('section') && <td className="p-1 border-e whitespace-nowrap"><select className="w-full bg-transparent text-[10px] outline-none" value={s.section} onChange={(e) => updateStudent(s.id, 'section', e.target.value)}>{options.sections.map(o => <option key={o} value={o}>{o}</option>)}</select></td>}
+                     {isColVisible('gender') && <td className="p-1 border-e whitespace-nowrap"><select className="w-full bg-transparent text-[10px] outline-none" value={s.gender} onChange={(e) => updateStudent(s.id, 'gender', e.target.value)}>{options.gender.map(o => <option key={o} value={o}>{o}</option>)}</select></td>}
                      
                      {isColVisible('address') && (
                         <>
-                            <td className="p-1 border-e"><input className="w-full text-[10px] bg-transparent outline-none text-center" value={s.address} onChange={(e) => updateStudent(s.id, 'address', e.target.value)} /></td>
-                            <td className="p-1 border-e"><select className="w-full bg-transparent text-[10px] outline-none" value={s.workOutside} onChange={(e) => updateStudent(s.id, 'workOutside', e.target.value)}>{options.workOutside.map(o => <option key={o} value={o}>{o}</option>)}</select></td>
-                            <td className={`p-1 border-e font-bold text-[10px] ${s.healthStatus.includes('مريض') ? 'text-red-600' : ''}`}><select className="w-full bg-transparent outline-none" value={s.healthStatus} onChange={(e) => updateStudent(s.id, 'healthStatus', e.target.value)}>{options.health.map(o => <option key={o} value={o}>{o}</option>)}</select></td>
-                            <td className="p-1 border-e"><input className="w-full text-[10px] bg-transparent outline-none text-center" value={s.healthDetails} onChange={(e) => updateStudent(s.id, 'healthDetails', e.target.value)} placeholder="-" /></td>
-                            <td className="p-1 border-e"><input className="w-full text-[10px] bg-transparent outline-none text-center" value={s.guardianName} onChange={(e) => updateStudent(s.id, 'guardianName', e.target.value)} /></td>
-                            <td className="p-1 border-e"><input className="w-full text-[10px] bg-transparent outline-none text-center" value={s.guardianPhones[0] || ''} onChange={(e) => updateStudent(s.id, 'guardianPhones', [e.target.value])} /></td>
+                            <td className="p-1 border-e whitespace-nowrap"><input className="w-full text-[10px] bg-transparent outline-none text-center" value={s.address} onChange={(e) => updateStudent(s.id, 'address', e.target.value)} /></td>
+                            <td className="p-1 border-e whitespace-nowrap"><select className="w-full bg-transparent text-[10px] outline-none" value={s.workOutside} onChange={(e) => updateStudent(s.id, 'workOutside', e.target.value)}>{options.workOutside.map(o => <option key={o} value={o}>{o}</option>)}</select></td>
+                            <td className={`p-1 border-e font-bold text-[10px] whitespace-nowrap ${s.healthStatus.includes('مريض') ? 'text-red-600' : ''}`}><select className="w-full bg-transparent outline-none" value={s.healthStatus} onChange={(e) => updateStudent(s.id, 'healthStatus', e.target.value)}>{options.health.map(o => <option key={o} value={o}>{o}</option>)}</select></td>
+                            <td className="p-1 border-e whitespace-nowrap"><input className="w-full text-[10px] bg-transparent outline-none text-center" value={s.healthDetails} onChange={(e) => updateStudent(s.id, 'healthDetails', e.target.value)} placeholder="-" /></td>
+                            <td className="p-1 border-e whitespace-nowrap"><input className="w-full text-[10px] bg-transparent outline-none text-center" value={s.guardianName} onChange={(e) => updateStudent(s.id, 'guardianName', e.target.value)} /></td>
+                            <td className="p-1 border-e whitespace-nowrap"><input className="w-full text-[10px] bg-transparent outline-none text-center" value={s.guardianPhones[0] || ''} onChange={(e) => updateStudent(s.id, 'guardianPhones', [e.target.value])} /></td>
                         </>
                      )}
                      {isColVisible('academic') && (
                         <>
-                            <td className={`p-1 border-e font-bold text-[10px] ${s.academicReading.includes('ضعيف') ? 'text-red-600' : ''}`}><select className="w-full bg-transparent outline-none" value={s.academicReading} onChange={(e) => updateStudent(s.id, 'academicReading', e.target.value)}>{options.level.map(o => <option key={o} value={o}>{o}</option>)}</select></td>
-                            <td className={`p-1 border-e font-bold text-[10px] ${s.academicWriting.includes('ضعيف') ? 'text-red-600' : ''}`}><select className="w-full bg-transparent outline-none" value={s.academicWriting} onChange={(e) => updateStudent(s.id, 'academicWriting', e.target.value)}>{options.level.map(o => <option key={o} value={o}>{o}</option>)}</select></td>
-                            <td className={`p-1 border-e font-bold text-[10px] ${s.academicParticipation.includes('ضعيف') ? 'text-red-600' : ''}`}><select className="w-full bg-transparent outline-none" value={s.academicParticipation} onChange={(e) => updateStudent(s.id, 'academicParticipation', e.target.value)}>{options.level.map(o => <option key={o} value={o}>{o}</option>)}</select></td>
+                            <td className={`p-1 border-e font-bold text-[10px] whitespace-nowrap ${s.academicReading.includes('ضعيف') ? 'text-red-600' : ''}`}><select className="w-full bg-transparent outline-none" value={s.academicReading} onChange={(e) => updateStudent(s.id, 'academicReading', e.target.value)}>{options.level.map(o => <option key={o} value={o}>{o}</option>)}</select></td>
+                            <td className={`p-1 border-e font-bold text-[10px] whitespace-nowrap ${s.academicWriting.includes('ضعيف') ? 'text-red-600' : ''}`}><select className="w-full bg-transparent outline-none" value={s.academicWriting} onChange={(e) => updateStudent(s.id, 'academicWriting', e.target.value)}>{options.level.map(o => <option key={o} value={o}>{o}</option>)}</select></td>
+                            <td className={`p-1 border-e font-bold text-[10px] whitespace-nowrap ${s.academicParticipation.includes('ضعيف') ? 'text-red-600' : ''}`}><select className="w-full bg-transparent outline-none" value={s.academicParticipation} onChange={(e) => updateStudent(s.id, 'academicParticipation', e.target.value)}>{options.level.map(o => <option key={o} value={o}>{o}</option>)}</select></td>
                         </>
                      )}
-                     {isColVisible('behavior') && <td className={`p-1 border-e font-bold text-[10px] ${s.behaviorLevel.includes('ضعيف') ? 'text-red-600' : ''}`}><select className="w-full bg-transparent outline-none" value={s.behaviorLevel} onChange={(e) => updateStudent(s.id, 'behaviorLevel', e.target.value)}>{options.behavior.map(o => <option key={o} value={o}>{o}</option>)}</select></td>}
+                     {isColVisible('behavior') && <td className={`p-1 border-e font-bold text-[10px] whitespace-nowrap ${s.behaviorLevel.includes('ضعيف') ? 'text-red-600' : ''}`}><select className="w-full bg-transparent outline-none" value={s.behaviorLevel} onChange={(e) => updateStudent(s.id, 'behaviorLevel', e.target.value)}>{options.behavior.map(o => <option key={o} value={o}>{o}</option>)}</select></td>}
                      {isColVisible('notes') && (
                         <>
-                            <td className="p-1 border-e">
+                            <td className="p-1 border-e whitespace-nowrap">
                                 <div className="flex flex-wrap gap-1 justify-center">
                                 {s.mainNotes.map(n => <span key={n} className="bg-slate-100 text-[8px] px-1 rounded border">{n}</span>)}
                                 <button onClick={() => setMainNotesModal({ id: s.id, currentNotes: s.mainNotes })} className="text-[10px] text-blue-600 font-bold">+</button>
                                 </div>
                             </td>
-                            <td className="p-1 border-e"><input className="w-full text-[10px] bg-transparent outline-none text-center" value={s.notes} onChange={(e) => updateStudent(s.id, 'notes', e.target.value)} placeholder="..." /></td>
+                            <td className="p-1 border-e whitespace-nowrap"><input className="w-full text-[10px] bg-transparent outline-none text-center" value={s.notes} onChange={(e) => updateStudent(s.id, 'notes', e.target.value)} placeholder="..." /></td>
                         </>
                      )}
                      {isColVisible('followup') && (
                         <>
-                            <td className="p-1 border-e"><select className="w-full bg-transparent text-[10px] outline-none" value={s.guardianEducation} onChange={(e) => updateStudent(s.id, 'guardianEducation', e.target.value)}>{options.eduStatus.map(o => <option key={o} value={o}>{o}</option>)}</select></td>
-                            <td className="p-1 border-e"><select className="w-full bg-transparent text-[10px] outline-none" value={s.guardianFollowUp} onChange={(e) => updateStudent(s.id, 'guardianFollowUp', e.target.value)}>{options.followUp.map(o => <option key={o} value={o}>{o}</option>)}</select></td>
-                            <td className="p-1 border-e"><select className="w-full bg-transparent text-[10px] outline-none" value={s.guardianCooperation} onChange={(e) => updateStudent(s.id, 'guardianCooperation', e.target.value)}>{options.cooperation.map(o => <option key={o} value={o}>{o}</option>)}</select></td>
+                            <td className="p-1 border-e whitespace-nowrap"><select className="w-full bg-transparent text-[10px] outline-none" value={s.guardianEducation} onChange={(e) => updateStudent(s.id, 'guardianEducation', e.target.value)}>{options.eduStatus.map(o => <option key={o} value={o}>{o}</option>)}</select></td>
+                            <td className="p-1 border-e whitespace-nowrap"><select className="w-full bg-transparent text-[10px] outline-none" value={s.guardianFollowUp} onChange={(e) => updateStudent(s.id, 'guardianFollowUp', e.target.value)}>{options.followUp.map(o => <option key={o} value={o}>{o}</option>)}</select></td>
+                            <td className="p-1 border-e whitespace-nowrap"><select className="w-full bg-transparent text-[10px] outline-none" value={s.guardianCooperation} onChange={(e) => updateStudent(s.id, 'guardianCooperation', e.target.value)}>{options.cooperation.map(o => <option key={o} value={o}>{o}</option>)}</select></td>
                         </>
                      )}
-                     <td className="p-1 border-e bg-white z-10 sticky right-0">
+                     <td className="p-1 border-e bg-white z-10 sticky right-0 whitespace-nowrap">
                         <div className="flex items-center justify-center gap-2">
                              <input type="checkbox" className="w-4 h-4" checked={selectedStudentIds.includes(s.id)} onChange={(e) => e.target.checked ? setSelectedStudentIds(prev => [...prev, s.id]) : setSelectedStudentIds(prev => prev.filter(id => id !== s.id))} />
                              <button onClick={() => { if(confirm('حذف؟')) updateData({studentReports: studentData.filter(x => x.id !== s.id)}) }} className="text-red-400 hover:text-red-600"><Trash2 size={14}/></button>
@@ -1179,6 +1257,14 @@ export const StudentsReportsPage: React.FC = () => {
         <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
             <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl animate-in zoom-in duration-200">
                 <h3 className="font-black mb-4 text-center text-xl text-slate-800">اختر الأعمدة للعرض</h3>
+                <div className="mb-2">
+                    <button 
+                       onClick={() => setSelectedColumns(columnsMap.map(c => c.key))}
+                       className="w-full bg-blue-50 text-blue-600 p-2 rounded-lg font-bold text-sm hover:bg-blue-100 border border-blue-200"
+                    >
+                        الجميع (إظهار كافة الحقول)
+                    </button>
+                </div>
                 <div className="grid grid-cols-2 gap-2 max-h-[50vh] overflow-y-auto mb-4">
                     {columnsMap.map(col => (
                         <button 

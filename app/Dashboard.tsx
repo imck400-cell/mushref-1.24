@@ -3,7 +3,7 @@ import { useGlobal } from '../context/GlobalState';
 import { 
   Users, CheckCircle2, AlertCircle, FileText, 
   TrendingUp, Calendar, Clock, Filter, ChevronLeft, ChevronRight, X, Check, PlayCircle,
-  GraduationCap, BookOpen, Activity, AlertTriangle, ShieldAlert, Star, Search
+  GraduationCap, BookOpen, Activity, AlertTriangle, ShieldAlert, Star, Search, Briefcase, ScrollText, ClipboardList
 } from 'lucide-react';
 
 const DashboardWidget: React.FC<{ id: string, initialStat: any, data: any, lang: string }> = ({ id, initialStat, data, lang }) => {
@@ -507,6 +507,7 @@ const DashboardWidget: React.FC<{ id: string, initialStat: any, data: any, lang:
 
 const Dashboard: React.FC = () => {
   const { lang, data } = useGlobal();
+  const [showSpecialModal, setShowSpecialModal] = useState(false);
 
   const stats = [
     { 
@@ -625,9 +626,77 @@ const Dashboard: React.FC = () => {
                 <div className={`absolute inset-0 bg-${btn.color}-500 opacity-0 group-hover:opacity-5 transition-opacity`}></div>
               </button>
             ))}
+            {/* New Special Reports Button */}
+            <button onClick={() => setShowSpecialModal(true)} className={`flex flex-col items-center justify-center p-5 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-200 transition-all gap-3 group relative overflow-hidden`}>
+                <div className={`p-3 bg-white rounded-xl shadow-sm text-indigo-500 group-hover:scale-110 transition-transform`}>
+                  <FileText className="w-6 h-6"/>
+                </div>
+                <span className="text-xs font-black text-slate-600 group-hover:text-slate-800">تقارير خاصة</span>
+                <div className={`absolute inset-0 bg-indigo-500 opacity-0 group-hover:opacity-5 transition-opacity`}></div>
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Special Reports Modal */}
+      {showSpecialModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+                <div className="flex justify-between items-center p-6 border-b bg-slate-50">
+                    <span className="text-xl font-black text-slate-800 flex items-center gap-2"><FileText size={24} className="text-indigo-600"/> تقارير خاصة ومتقدمة</span>
+                    <button onClick={() => setShowSpecialModal(false)} className="bg-white p-2 rounded-full hover:bg-red-50 hover:text-red-500 transition-colors border shadow-sm"><X size={20}/></button>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/50">
+                    {/* Administrative Supervisor Section */}
+                    <div className="bg-white p-5 rounded-2xl border shadow-sm hover:shadow-md transition-all">
+                        <h3 className="text-lg font-black text-blue-700 mb-4 flex items-center gap-2 border-b pb-2"><Briefcase size={20}/> المشرف الإداري</h3>
+                        <div className="grid grid-cols-2 gap-2">
+                            {["الخطة الفصلية", "الخلاصة الشهرية", "المهام اليومية", "المهام المضافة", "المهام المرحلة", "أهم المشكلات اليومية", "التوصيات العامة", "احتياجات الدور", "سجل متابعة الدفاتر والتصحيح", "الجرد العام للعهد", "ملاحظات عامة"].map((item, i) => (
+                                <button key={i} className="p-2 text-xs font-bold text-slate-600 bg-slate-50 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors border border-slate-100 text-right">{item}</button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Teaching Staff Section */}
+                    <div className="bg-white p-5 rounded-2xl border shadow-sm hover:shadow-md transition-all">
+                        <h3 className="text-lg font-black text-purple-700 mb-4 flex items-center gap-2 border-b pb-2"><Users size={20}/> الكادر التعليمي</h3>
+                        <div className="grid grid-cols-1 gap-2">
+                            {["سجل الإبداع والتميز", "كشف الاستلام والتسليم", "المخالفات", "التعميمات"].map((item, i) => (
+                                <button key={i} className="p-3 text-sm font-bold text-slate-600 bg-slate-50 rounded-xl hover:bg-purple-50 hover:text-purple-700 transition-colors border border-slate-100 flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-purple-400"></div> {item}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Students Section */}
+                    <div className="bg-white p-5 rounded-2xl border shadow-sm hover:shadow-md transition-all">
+                        <h3 className="text-lg font-black text-green-700 mb-4 flex items-center gap-2 border-b pb-2"><GraduationCap size={20}/> الطلاب/ الطالبات</h3>
+                        <div className="grid grid-cols-1 gap-2">
+                            {["الغياب اليومي", "التأخر", "خروج طالب أثناء الدراسة", "المخالفات الطلابية", "سجل الإتلاف المدرسي", "سجل الحالات الخاصة", "سجل الحالة الصحية", "سجل زيارة أولياء الأمور والتواصل بهم"].map((item, i) => (
+                                <button key={i} className="p-3 text-sm font-bold text-slate-600 bg-slate-50 rounded-xl hover:bg-green-50 hover:text-green-700 transition-colors border border-slate-100 flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-green-400"></div> {item}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Test Reports Section */}
+                    <div className="bg-white p-5 rounded-2xl border shadow-sm hover:shadow-md transition-all">
+                        <h3 className="text-lg font-black text-orange-700 mb-4 flex items-center gap-2 border-b pb-2"><ScrollText size={20}/> تقارير الاختبار</h3>
+                        <div className="grid grid-cols-1 gap-2">
+                            {["الاختبار الشهري", "الاختبار الفصلي"].map((item, i) => (
+                                <button key={i} className="p-3 text-sm font-bold text-slate-600 bg-slate-50 rounded-xl hover:bg-orange-50 hover:text-orange-700 transition-colors border border-slate-100 flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-orange-400"></div> {item}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+      )}
     </div>
   );
 };
