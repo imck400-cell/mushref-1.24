@@ -84,6 +84,24 @@ export interface AbsenceRecord {
   notes: string;
   previousAbsenceCount: number;
   term?: string;
+  tags?: string[];
+}
+
+export interface LatenessRecord {
+  id: string;
+  studentId: string;
+  studentName: string;
+  grade: string;
+  section: string;
+  date: string;
+  dayName: string;
+  term: string;
+  latenessStatus: string;
+  reason: string;
+  actionTaken: string;
+  signaturePledge?: string;
+  notes: string;
+  previousCount: number;
 }
 
 export interface StudentReport {
@@ -113,6 +131,7 @@ export interface StudentReport {
   isExcellent?: boolean;
   absenceDays?: number;
   isExpectedAbsent?: boolean;
+  isLatenessPinned?: boolean;
 }
 
 export interface AppData {
@@ -125,4 +144,5 @@ export interface AppData {
   maxGrades: Record<string, number>;
   studentReports: StudentReport[];
   absenceRecords: AbsenceRecord[];
+  latenessRecords: LatenessRecord[];
 }

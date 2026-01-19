@@ -25,7 +25,8 @@ const initialData: AppData = {
   teacherFollowUps: [],
   maxGrades: defaultMaxGrades,
   studentReports: [],
-  absenceRecords: []
+  absenceRecords: [],
+  latenessRecords: []
 };
 
 const GlobalContext = createContext<GlobalContextType | undefined>(undefined);
@@ -53,8 +54,7 @@ export const GlobalProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const login = (pass: string) => {
-    // Simple authentication
-    if (pass === '1234' || pass === 'admin') { 
+    if (pass === '123') { 
       localStorage.setItem('rafiquk_auth', 'true');
       setIsAuthenticated(true);
       return true;
