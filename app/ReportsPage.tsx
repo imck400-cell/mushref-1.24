@@ -109,9 +109,7 @@ export const DailyReportsPage: React.FC = () => {
     return 'bg-[#DDEBF7]';
   };
 
-  // ... (Keeping all existing Teacher functions identical) ...
   const handleTeacherFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // ... same code ...
     const file = e.target.files?.[0];
     if (!file || !activeReportId) return;
     const reader = new FileReader();
@@ -764,6 +762,9 @@ export const StudentsReportsPage: React.FC = () => {
   const [tempListSelected, setTempListSelected] = useState<string[]>([]);
   const [mainNotesModal, setMainNotesModal] = useState<{ id: string, currentNotes: string[] } | null>(null);
   const [importConfirmation, setImportConfirmation] = useState<{ data: any[] } | null>(null);
+  
+  // Suggestion State
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const studentData = data.studentReports || [];
 
@@ -1076,17 +1077,41 @@ export const StudentsReportsPage: React.FC = () => {
       
       {/* Smart Filter Bar (Name & Feature) */}
       <div className="bg-slate-50 p-4 rounded-xl border flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-         <div className="flex-1 w-full">
+         <div className="flex-1 w-full relative">
             <div className="flex gap-2">
                 <input 
                     className="flex-1 p-2.5 border rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-100" 
                     placeholder="اكتب اسم الطالب هنا لإضافته للفلتر..." 
                     value={studentInput}
-                    onChange={(e) => setStudentInput(e.target.value)}
+                    onChange={(e) => { setStudentInput(e.target.value); setShowSuggestions(true); }}
                     onKeyDown={(e) => e.key === 'Enter' && addStudentToFilter()}
+                    onFocus={() => setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                 />
                 <button onClick={() => addStudentToFilter()} className="bg-blue-600 text-white p-2.5 rounded-xl hover:bg-blue-700"><Plus size={16}/></button>
             </div>
+            
+            {/* Auto-Complete Suggestions */}
+            {showSuggestions && studentInput && (
+                <div className="absolute top-full left-0 w-full bg-white border border-slate-200 rounded-xl shadow-lg z-50 max-h-48 overflow-y-auto mt-1">
+                    {studentData
+                        .filter(s => s.name.includes(studentInput))
+                        .map(s => s.name)
+                        .filter((v, i, a) => a.indexOf(v) === i) // Unique names
+                        .slice(0, 5) // Limit to top 5
+                        .map((name, i) => (
+                            <div 
+                                key={i} 
+                                className="p-2.5 hover:bg-blue-50 cursor-pointer text-sm font-bold text-slate-700 border-b border-slate-50 last:border-0" 
+                                onClick={() => { addStudentToFilter(name); setShowSuggestions(false); }}
+                            >
+                                {name}
+                            </div>
+                        ))
+                    }
+                </div>
+            )}
+
             {selectedStudentNames.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
                     {selectedStudentNames.map(name => (
@@ -1127,7 +1152,7 @@ export const StudentsReportsPage: React.FC = () => {
                   </th>
                 </tr>
                 <tr className="border-b border-slate-300">
-                  <th className="p-3 border-e border-slate-300 bg-[#FFD966] min-w-[200px] whitespace-nowrap sticky right-0 z-30">اسم الطالب</th>
+                  <th className={`p-3 border-e border-slate-300 bg-[#FFD966] whitespace-nowrap sticky right-0 z-30 ${filterMode === 'specific_names' ? 'w-40' : 'min-w-[200px]'}`}>اسم الطالب</th>
                   {isColVisible('grade') && <th className="p-3 border-e border-slate-300 bg-[#FFD966] whitespace-nowrap">الصف</th>}
                   {isColVisible('section') && <th className="p-3 border-e border-slate-300 bg-[#FFD966] whitespace-nowrap">الشعبة</th>}
                   {isColVisible('gender') && <th className="p-3 border-e border-slate-300 bg-[#FFD966] whitespace-nowrap">النوع</th>}
@@ -1164,14 +1189,34 @@ export const StudentsReportsPage: React.FC = () => {
                 </tr>
              </thead>
              <tbody className="divide-y">
-                {filteredData.map((s, idx) => (
+                {filteredData.map((s, idx) => {
+                  // Determine display name format based on filter mode
+                  const displayName = useMemo(() => {
+                      if (filterMode === 'specific_names') {
+                          const parts = s.name.trim().split(/\s+/);
+                          if (parts.length > 2) {
+                              return `${parts[0]} ${parts[1]} ${parts[parts.length - 1]}`;
+                          }
+                          return s.name;
+                      }
+                      return s.name;
+                  }, [s.name, filterMode]);
+
+                  return (
                   <tr key={s.id} className="hover:bg-slate-50">
-                     <td className="p-2 border-e sticky right-0 bg-white z-10 flex items-center gap-1 group-hover:bg-slate-50 whitespace-nowrap">
+                     <td className={`p-2 border-e sticky right-0 bg-white z-10 flex items-center gap-1 group-hover:bg-slate-50 whitespace-nowrap ${filterMode === 'specific_names' ? 'w-40' : 'min-w-[200px]'}`}>
                         <div className="flex flex-col gap-0.5">
                            <button onClick={() => toggleStar(s.id, 'isExcellent')}><Star size={12} className={s.isExcellent ? "fill-yellow-400 text-yellow-400" : "text-slate-300"}/></button>
                            <button onClick={() => toggleStar(s.id, 'isBlacklisted')}><AlertCircle size={12} className={s.isBlacklisted ? "text-red-600" : "text-slate-300"}/></button>
                         </div>
-                        <input className="w-full text-xs font-bold bg-transparent outline-none" value={s.name} onChange={(e) => updateStudent(s.id, 'name', e.target.value)} placeholder="الاسم..." />
+                        <input 
+                            className="w-full text-xs font-bold bg-transparent outline-none" 
+                            value={displayName} 
+                            onChange={(e) => updateStudent(s.id, 'name', e.target.value)} 
+                            placeholder="الاسم..."
+                            disabled={filterMode === 'specific_names'} 
+                            title={filterMode === 'specific_names' ? s.name : ''}
+                        />
                      </td>
                      {isColVisible('grade') && <td className="p-1 border-e whitespace-nowrap"><select className="w-full bg-transparent text-[10px] outline-none" value={s.grade} onChange={(e) => updateStudent(s.id, 'grade', e.target.value)}>{options.grades.map(o => <option key={o} value={o}>{o}</option>)}</select></td>}
                      {isColVisible('section') && <td className="p-1 border-e whitespace-nowrap"><select className="w-full bg-transparent text-[10px] outline-none" value={s.section} onChange={(e) => updateStudent(s.id, 'section', e.target.value)}>{options.sections.map(o => <option key={o} value={o}>{o}</option>)}</select></td>}
@@ -1220,12 +1265,13 @@ export const StudentsReportsPage: React.FC = () => {
                         </div>
                      </td>
                   </tr>
-                ))}
+                )})}
              </tbody>
           </table>
         </div>
       </div>
       
+      {/* ... Modals (kept same) ... */}
       {mainNotesModal && (
         <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl animate-in zoom-in duration-200">
