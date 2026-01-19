@@ -1,63 +1,64 @@
 
-export type Language = 'ar' | 'en';
-
-export interface CustomField {
+export interface TeacherFollowUp {
   id: string;
-  label: string;
-  value: string;
-}
-
-export interface SchoolProfile {
-  schoolName: string;
-  supervisorName: string;
-  classes: string;
-  qualityOfficer: string;
-  managerName: string; // Kept for backward compatibility, can represent General Manager or Principal
-  year: string;
-  // New Fields
-  ministry?: string;
-  district?: string;
-  branch?: string;
-  term?: string;
-  branchManager?: string;
-  generalManager?: string;
-  customFields?: CustomField[];
+  teacherName: string;
+  subject: string;
+  class?: string;
+  period?: string;
+  week?: string;
+  date?: string;
+  
+  // Evaluation criteria
+  appearance?: number;
+  preparation?: number;
+  objective?: number;
+  strategy?: number;
+  aids?: number;
+  interaction?: number;
+  closing?: number;
+  evaluation?: number;
+  
+  // Checkboxes/Status
+  homework?: boolean;
+  notes?: string;
+  recommendations?: string;
+  
+  // For dashboard calculations
+  violations_score: number;
+  attendance?: number;
+  supervision_queue?: number;
+  supervision_rest?: number;
+  correction_books?: number;
+  correction_notebooks?: number;
+  teaching_aids?: number;
+  extra_activities?: number;
+  _reportDate?: string;
 }
 
 export interface SubstitutionEntry {
   id: string;
   absentTeacher: string;
   replacementTeacher: string;
-  period: string;
-  class: string;
   date: string;
-  paymentStatus: 'pending' | 'paid';
-  // Dynamic periods
-  [key: string]: any;
+  paymentStatus: string;
+  p1: string; p2: string; p3: string; p4: string; p5: string; p6: string; p7: string;
+  sig1?: string; sig2?: string; sig3?: string; sig4?: string; sig5?: string; sig6?: string; sig7?: string;
+  signature?: string;
+  period?: string;
+  class?: string;
 }
 
-export interface TeacherFollowUp {
-  id: string;
-  teacherName: string;
-  subjectCode: string;
-  className: string;
-  attendance: number;
-  appearance: number;
-  preparation: number;
-  supervision_queue: number;
-  supervision_rest: number;
-  supervision_end: number;
-  correction_books: number;
-  correction_notebooks: number;
-  correction_followup: number;
-  teaching_aids: number;
-  extra_activities: number;
-  radio: number;
-  creativity: number;
-  zero_period: number;
-  violations_score: number;
-  violations_notes: string[];
-  order?: number;
+export interface SchoolProfile {
+  schoolName: string;
+  supervisorName: string;
+  year: string;
+  ministry?: string;
+  district?: string;
+  branch?: string;
+  term?: string;
+  branchManager?: string;
+  generalManager?: string;
+  customFields?: { id: string; label: string; value: string }[];
 }
 
 export interface DailyReportContainer {
@@ -65,6 +66,24 @@ export interface DailyReportContainer {
   dayName: string;
   dateStr: string;
   teachersData: TeacherFollowUp[];
+}
+
+export interface AbsenceRecord {
+  id: string;
+  studentId: string;
+  studentName: string;
+  grade: string;
+  section: string;
+  date: string;
+  dayName: string;
+  reason: string;
+  contactStatus: string;
+  contactType: string;
+  respondent: string;
+  contactResult: string;
+  notes: string;
+  previousAbsenceCount: number;
+  term?: string;
 }
 
 export interface StudentReport {
@@ -92,6 +111,8 @@ export interface StudentReport {
   createdAt: string;
   isBlacklisted?: boolean;
   isExcellent?: boolean;
+  absenceDays?: number;
+  isExpectedAbsent?: boolean;
 }
 
 export interface AppData {
@@ -102,5 +123,6 @@ export interface AppData {
   parentVisits: any[];
   teacherFollowUps: TeacherFollowUp[];
   maxGrades: Record<string, number>;
-  studentReports?: StudentReport[];
+  studentReports: StudentReport[];
+  absenceRecords: AbsenceRecord[];
 }
